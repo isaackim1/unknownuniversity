@@ -1,0 +1,110 @@
+/* =============================================================================
+   Unknown University — Design Tokens
+   Single source of truth for the whole site. Re-skin everything from here.
+   Brand language inspired by Unknown University (fictional / inspired-by).
+   ============================================================================= */
+
+:root {
+  /* ---- Brand palette ------------------------------------------------------ */
+  --c-ink: #111111;            /* primary text / dark surfaces */
+  --c-ink-soft: #34343a;
+  --c-ink-muted: #6c6c74;      /* secondary text */
+  --c-ink-faint: #9a9aa1;      /* tertiary text, hints */
+
+  --c-paper: #faf9f9;          /* page background (off-white) */
+  --c-paper-raised: #ffffff;   /* cards / raised surfaces */
+  --c-wash: #f1efec;           /* subtle neutral wash panels */
+
+  --c-line: #e7e3df;           /* hairline borders */
+  --c-line-strong: #d9d4ce;    /* stronger borders / inputs */
+
+  --c-teal: #68ccd1;           /* primary brand accent */
+  --c-teal-strong: #3fb0b6;
+  --c-teal-ink: #0e676c;       /* readable teal text on light */
+  --c-teal-wash: #e6f6f7;
+
+  --c-coral: #ff6a3d;          /* action / energy accent */
+  --c-coral-strong: #f1542a;
+  --c-coral-ink: #c5421f;
+  --c-coral-wash: #ffece5;
+
+  /* ---- Readiness status --------------------------------------------------- */
+  --c-go: #1f8f5f;        --c-go-wash: #e6f5ee;       --c-go-line: #a7d8c1;
+  --c-almost: #c9870f;    --c-almost-wash: #fbf0d9;   --c-almost-line: #e8cf95;
+  --c-nogo: #cf3b3b;      --c-nogo-wash: #fbe7e7;     --c-nogo-line: #eab3b3;
+
+  /* ---- Typography --------------------------------------------------------- */
+  --font-display: 'Archivo', 'Archivo SemiExpanded', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-ui: 'Work Sans', 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-display: 800;
+
+  /* Modular type scale */
+  --fs-12: 0.75rem;
+  --fs-13: 0.8125rem;
+  --fs-14: 0.875rem;
+  --fs-15: 0.9375rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-20: 1.25rem;
+  --fs-24: 1.5rem;
+  --fs-30: 1.875rem;
+  --fs-38: 2.375rem;
+  --fs-48: 3rem;
+  --fs-60: 3.75rem;
+
+  --lh-tight: 1.08;
+  --lh-snug: 1.25;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.65;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --tracking-caps: 0.14em;
+
+  /* ---- Spacing scale (4px base) ------------------------------------------ */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 40px;
+  --sp-9: 48px;
+  --sp-10: 64px;
+  --sp-11: 80px;
+  --sp-12: 112px;
+
+  /* ---- Radius ------------------------------------------------------------- */
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 26px;
+  --r-pill: 999px;
+
+  /* ---- Elevation (very subtle / flat) ------------------------------------ */
+  --shadow-none: none;
+  --shadow-sm: 0 1px 2px rgba(17, 17, 17, 0.04);
+  --shadow-card: 0 1px 3px rgba(17, 17, 17, 0.05), 0 1px 0 rgba(17, 17, 17, 0.02);
+  --shadow-pop: 0 12px 36px rgba(17, 17, 17, 0.12);
+
+  /* ---- Motion ------------------------------------------------------------- */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 360ms;
+
+  /* ---- Layout ------------------------------------------------------------- */
+  --sidebar-w: 264px;
+  --topbar-h: 64px;
+  --content-max: 1080px;
+  --marketing-max: 1180px;
+  --focus-ring: 0 0 0 3px rgba(104, 204, 209, 0.55);
+}
