@@ -8,7 +8,9 @@ export interface FounderIntake {
   problem: string
   stage: Stage
   tested: string
-  weeklyHours: number
+  weeklyTime: string
+  /** Legacy numeric field kept optional so the api proxy route still type-checks. */
+  weeklyHours?: number
 }
 
 export interface FounderProfile {
