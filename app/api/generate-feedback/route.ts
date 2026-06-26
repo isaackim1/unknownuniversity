@@ -1,62 +1,122 @@
-import { generateJson } from '@/lib/claude'
-import type {
-  Feedback,
-  FounderIntake,
-  FounderProfile,
-  Submission,
-} from '@/lib/types'
+import { fallbackFeedback } from '@/lib/fallbacks'
+import type { Feedback, FeedbackRequest, Submission } from '@/lib/types'
 
-const SYSTEM = `You are Thomas, an AI founder coach for Unknown Digital Campus.
-Review a founder's problem-validation submission against their intake and profile.
-Return JSON only with no markdown or extra text.
+const FLUXZERO_TIMEOUT_MS = 8_000
+const DEFAULT_FLUXZERO_BASE_URL = 'http://localhost:8080'
 
-Return exactly this shape:
-{
-  "status": "not_ready" | "almost_ready" | "ready",
-  "strengths": string[],
-  "missingPieces": string[],
-  "specificFeedback": string,
-  "improvedExample": string,
-  "nextAction": string
+function getFluxzeroBaseUrl(): string {
+  return (process.env.FLUXZERO_BASE_URL || DEFAULT_FLUXZERO_BASE_URL).replace(/\/+$/, '')
 }
 
-Rules:
-- status "ready" only if the hypothesis is specific, falsifiable, and interview questions would genuinely test assumptions
-- strengths and missingPieces: 2-4 items each
-- specificFeedback: one focused paragraph
-- improvedExample: rewrite their hypothesis or one interview question as a stronger example
-- nextAction: one concrete step they can take this week`
+function toWarningMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'unknown proxy error'
+}
 
-interface FeedbackRequest {
-  intake: FounderIntake
-  profile: FounderProfile
-  submission: Submission
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function isFeedback(value: unknown): value is Feedback {
+  if (!isRecord(value)) return false
+
+  return (
+    (value.status === 'not_ready' ||
+      value.status === 'almost_ready' ||
+      value.status === 'ready') &&
+    typeof value.currentLevel === 'string' &&
+    isStringArray(value.strengths) &&
+    isStringArray(value.missing) &&
+    typeof value.specificFeedback === 'string' &&
+    typeof value.improvedExample === 'string' &&
+    typeof value.nextAction === 'string' &&
+    typeof value.unlockNextModule === 'boolean' &&
+    value.poweredBy === 'fluxzero'
+  )
+}
+
+function normalizeInterviewQuestions(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter(Boolean)
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+  }
+
+  return []
+}
+
+function normalizeSubmission(submission: Partial<Submission> | undefined): {
+  problemHypothesis: unknown
+  interviewQuestions: string[]
+} {
+  return {
+    problemHypothesis: submission?.problemHypothesis,
+    interviewQuestions: normalizeInterviewQuestions(submission?.interviewQuestions),
+  }
+}
+
+function toFluxzeroFeedbackPayload(request: Partial<FeedbackRequest>): Record<string, unknown> {
+  return {
+    intake: request.intake,
+    profile: request.profile,
+    submission: normalizeSubmission(request.submission),
+    previousFeedback: request.previousFeedback,
+  }
+}
+
+async function postFeedbackToFluxzero(request: Partial<FeedbackRequest>): Promise<Feedback> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), FLUXZERO_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(`${getFluxzeroBaseUrl()}/api/generate-feedback`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(toFluxzeroFeedbackPayload(request)),
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      throw new Error(`Fluxzero feedback returned ${response.status}`)
+    }
+
+    const data: unknown = await response.json()
+    if (!isFeedback(data)) {
+      throw new Error('Fluxzero feedback response was invalid')
+    }
+
+    return data
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 export async function POST(request: Request) {
+  let body: Partial<FeedbackRequest> = {}
+
   try {
-    const body = (await request.json()) as FeedbackRequest
-
-    if (
-      !body?.intake ||
-      !body?.profile ||
-      !body?.submission?.problemHypothesis ||
-      !Array.isArray(body?.submission?.interviewQuestions)
-    ) {
-      return Response.json({ error: 'Invalid feedback payload' }, { status: 400 })
-    }
-
-    const feedback = await generateJson<Feedback>(
-      SYSTEM,
-      JSON.stringify(body, null, 2),
-    )
-
-    return Response.json(feedback)
+    const parsed: unknown = await request.json()
+    body = isRecord(parsed) ? (parsed as Partial<FeedbackRequest>) : {}
   } catch (error) {
-    if (error instanceof Error && error.message === 'ANTHROPIC_API_KEY is not set') {
-      return Response.json({ error: 'Server missing ANTHROPIC_API_KEY' }, { status: 500 })
-    }
-    console.error('generate-feedback error:', error)
-    return Response.json({ error: 'Failed to generate feedback' }, { status: 502 })
+    console.warn('Using local fallback feedback:', toWarningMessage(error))
+    return Response.json(fallbackFeedback(body))
+  }
+
+  try {
+    return Response.json(await postFeedbackToFluxzero(body))
+  } catch (error) {
+    console.warn('Using local fallback feedback:', toWarningMessage(error))
+    return Response.json(fallbackFeedback(body))
   }
 }
